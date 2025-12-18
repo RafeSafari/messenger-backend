@@ -1,29 +1,30 @@
-import { CometChatClient } from "./cometChatClient";
+import { randomUUID } from "node:crypto";
+import { CometChatClient, CometChatUser } from "./cometChatClient";
 import bcrypt from 'bcrypt';
 const cometClient = new CometChatClient();
 
-const register = async (email: string, password: string): Promise<any> => {
+export const register = async (body: {name: string, email: string, password: string}): Promise<CometChatUser|null> => {
   try {
-    const user = await cometClient.createUser({
-      uid: email,
-      name: email.split('@')[0] || email,
+    const response = await cometClient.createUser({
+      uid: randomUUID(),
+      name: body.name || body.email.split('@')[0] || body.email,
       metadata: {
-        email,
+        email: body.email,
         "@private": {
-          password: bcrypt.hashSync(password, 10),
+          password: bcrypt.hashSync(body.password, 10),
         }
       }
     });
-    return user;
+    return response.data || null;
   } catch (err: any) {
-    console.error(err.response?.data ?? err.message);
-    return err;
+    console.error(err);
+    return null;
   }
 };
 
-const login = async (email: string, password: string): Promise<any> => {
+export const login = async (email: string, password: string): Promise<CometChatUser|null> => {
   try {
-    const user = await cometClient.getUser(email);
+    const user = await cometClient.getCachedUserByEmail(email);
     if (!user) {
       return null;
     } else {
@@ -35,6 +36,6 @@ const login = async (email: string, password: string): Promise<any> => {
     return user;
   } catch (err: any) {
     console.error(err.response?.data ?? err.message);
-    return err;
+    return null;
   }
 };

@@ -1,5 +1,6 @@
 // cometchatClient.ts
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import { env } from '../env';
 
 /**
  * =========
@@ -8,14 +9,14 @@ import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
  * In production you should set these via environment variables.
  */
 
-export const COMETCHAT_APP_ID: string = process.env.COMETCHAT_APP_ID ?? '16732397586ed16b8';
+// const COMETCHAT_APP_ID: string = process.env.COMETCHAT_APP_ID ?? '16732397586ed16b8';
 
-export const COMETCHAT_REGION: string = process.env.COMETCHAT_REGION ?? 'eu';
+// const COMETCHAT_REGION: string = process.env.COMETCHAT_REGION ?? 'eu';
 
-export const COMETCHAT_API_KEY: string = process.env.COMETCHAT_API_KEY ?? 'c7729b4777c7dff07f7f2fd612987ba5588cbe8c';
+// const COMETCHAT_API_KEY: string = process.env.COMETCHAT_API_KEY ?? 'c7729b4777c7dff07f7f2fd612987ba5588cbe8c';
 
 // Base REST domain for chat APIs
-export const COMETCHAT_BASE_URL = `https://${COMETCHAT_APP_ID}.api-${COMETCHAT_REGION}.cometchat.io/v3`;
+export const COMETCHAT_BASE_URL = `https://${env.COMETCHAT_APP_ID}.api-${env.COMETCHAT_REGION}.cometchat.io/v3`;
 
 // Default axios config shared by all requests
 export const AXIOS_DEFAULT_CONFIG: AxiosRequestConfig = {
@@ -23,7 +24,7 @@ export const AXIOS_DEFAULT_CONFIG: AxiosRequestConfig = {
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
-    apikey: COMETCHAT_API_KEY,
+    apikey: env.COMETCHAT_API_KEY,
   },
 };
 
@@ -54,7 +55,7 @@ export interface CreateUserRequest {
   link?: string;
   role?: string;
   statusMessage?: string;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, any>;
   tags?: string[];
   withAuthToken?: boolean;
 }
@@ -156,6 +157,10 @@ function buildConfig({
  */
 export class CometChatClient {
   private http: AxiosInstance;
+  private CACHED_USERS: CometChatUser[] = [];
+  private CACHED_USERS_INITIALIZED = false;
+  // private CACHED_USERS_BY_EMAIL_KEYS: Record<string, CometChatUser> = {};
+
 
   constructor(customAxiosConfig: AxiosRequestConfig = {}) {
     this.http = axios.create({
@@ -166,6 +171,13 @@ export class CometChatClient {
         ...(customAxiosConfig.headers ?? {}),
       },
     });
+  }
+
+  private async getCachedUsers(): Promise<CometChatUser[]> {
+    if (this.CACHED_USERS_INITIALIZED) return this.CACHED_USERS;
+    this.CACHED_USERS = (await this.listUsers({ perPage: 1000 })).data || [];
+    this.CACHED_USERS_INITIALIZED = true;
+    return this.CACHED_USERS;
   }
 
   /**
@@ -184,12 +196,19 @@ export class CometChatClient {
 
   // POST /users
   async createUser(payload: CreateUserRequest): Promise<ApiResponse<CometChatUser>> {
+    if (payload.metadata?.email) {
+      const cachedUser = await this.getCachedUserByEmail(payload.metadata.email);
+      if (cachedUser) {
+        throw new Error(`User with email ${payload.metadata.email} already exists`);
+      }
+    }
     const res = await this.http.post<ApiResponse<CometChatUser>>('/users', payload);
+    if (res.data.data) this.CACHED_USERS.push(res.data.data);
     return res.data;
   }
 
   // GET /users/{uid}
-  async getUser(
+  async getUserById(
     uid: string,
     { onBehalfOf }: { onBehalfOf?: string } = {},
   ): Promise<CometChatUser> {
@@ -198,6 +217,11 @@ export class CometChatClient {
       buildConfig({ onBehalfOf }),
     );
     return res.data;
+  }
+
+  async getCachedUserByEmail(email: string): Promise<CometChatUser | undefined> {
+    const cachedUsers = await this.getCachedUsers();
+    return cachedUsers.find((u) => u.metadata?.email === email);
   }
 
   // PUT /users/{uid}

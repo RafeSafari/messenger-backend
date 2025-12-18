@@ -1,19 +1,39 @@
 import express from 'express';
-import dotenv from 'dotenv';
+import cors from 'cors';
+import { env } from './env';
 import authRoutes from './routes/auth';
-
-dotenv.config();
+import { authMiddleware } from './middleware/auth';
 
 const app = express();
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+
+      if (
+        origin.startsWith('http://localhost:') ||
+        origin.startsWith('http://127.0.0.1:')
+      ) {
+        return callback(null, true);
+      }
+
+      callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true
+  })
+);
 app.use(express.json());
 
 app.use('/auth', authRoutes);
+
+app.use(authMiddleware);
 
 app.get('/protected', (req, res) => {
   res.json({ message: 'Protected route works' });
 });
 
-const PORT = process.env.PORT || 50005;
+const PORT = env.PORT || 50005;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}\nenv: ${process.env.NODE_ENV}\ndb: ${process.env.DATABASE_URL}\nurl: http://localhost:${PORT}`);
+  console.clear();
+  console.log(`Server running on port ${PORT}\nurl: http://localhost:${PORT}`);
 });
