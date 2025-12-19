@@ -1,27 +1,26 @@
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { env } from '../env';
 
 export function authMiddleware(
   req: Request,
   res: Response,
   next: NextFunction
 ) {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader) {
+  const token = req.headers.authorization ? req.headers.authorization.split(' ')[1] : req.headers.cookie ? req.headers.cookie.split('=')[1] : null;
+  if (!token) {
     return res.status(401).json({ message: 'No token provided' });
   }
-
-  const token = authHeader.split(' ')[1];
 
   try {
     const decoded = jwt.verify(
       token || '',
-      process.env.JWT_SECRET as string
+      env.JWT_SECRET,
     );
+    if (typeof decoded !== 'string' && !decoded?.uid) throw new Error('No uid in token');
     req.user = decoded;
     next();
-  } catch {
-    return res.status(401).json({ message: 'Invalid token' });
+  } catch (error) {
+    return res.status(401).json({ message: 'Invalid token', error });
   }
 }

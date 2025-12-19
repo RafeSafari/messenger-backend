@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { env } from './env';
 import authRoutes from './routes/auth';
+import contactRoutes from './routes/contacts';
 import { authMiddleware } from './middleware/auth';
 
 const app = express();
@@ -27,6 +28,8 @@ app.use(express.json());
 app.use('/auth', authRoutes);
 
 app.use(authMiddleware);
+
+app.use('/contacts', contactRoutes);
 
 app.get('/protected', (req, res) => {
   res.json({ message: 'Protected route works' });

@@ -1,26 +1,10 @@
-// cometchatClient.ts
+import Fuse from 'fuse.js';
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { env } from '../env';
 
-/**
- * =========
- * CONSTANTS
- * =========
- * In production you should set these via environment variables.
- */
-
-// const COMETCHAT_APP_ID: string = process.env.COMETCHAT_APP_ID ?? '16732397586ed16b8';
-
-// const COMETCHAT_REGION: string = process.env.COMETCHAT_REGION ?? 'eu';
-
-// const COMETCHAT_API_KEY: string = process.env.COMETCHAT_API_KEY ?? 'c7729b4777c7dff07f7f2fd612987ba5588cbe8c';
-
-// Base REST domain for chat APIs
-export const COMETCHAT_BASE_URL = `https://${env.COMETCHAT_APP_ID}.api-${env.COMETCHAT_REGION}.cometchat.io/v3`;
-
-// Default axios config shared by all requests
+// Default axios config
 export const AXIOS_DEFAULT_CONFIG: AxiosRequestConfig = {
-  baseURL: COMETCHAT_BASE_URL,
+  baseURL: `https://${env.COMETCHAT_APP_ID}.api-${env.COMETCHAT_REGION}.cometchat.io/v3`,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -28,13 +12,7 @@ export const AXIOS_DEFAULT_CONFIG: AxiosRequestConfig = {
   },
 };
 
-/**
- * ===========
- * BASIC TYPES
- * ===========
- * These are simplified versions. Extend as needed based on the docs.
- */
-
+// #region // * BASIC TYPES
 export interface CometChatUser {
   uid: string;
   name: string;
@@ -100,6 +78,26 @@ export interface ListUsersOptions {
   [key: string]: unknown;
 }
 
+export interface AddFriendRequest {
+  accepted: string[];
+  addToConversations?: boolean;
+}
+
+export interface FriendAcceptanceResult {
+  success: boolean;
+  message: string;
+}
+
+export interface AddFriendResponse {
+  accepted: Record<string, FriendAcceptanceResult>;
+}
+
+export interface GetFriendsRequest {
+  searchKey?: string;
+  perPage?: number;
+  page?: number;
+}
+
 export interface ListMessagesOptions {
   onBehalfOf?: string;
   limit?: number;
@@ -130,6 +128,7 @@ export interface ApiResponse<T = unknown> {
   data?: T;
   [key: string]: unknown;
 }
+// #endregion
 
 /**
  * Small helper to merge onBehalfOf header and query params when provided.
@@ -159,8 +158,6 @@ export class CometChatClient {
   private http: AxiosInstance;
   private CACHED_USERS: CometChatUser[] = [];
   private CACHED_USERS_INITIALIZED = false;
-  // private CACHED_USERS_BY_EMAIL_KEYS: Record<string, CometChatUser> = {};
-
 
   constructor(customAxiosConfig: AxiosRequestConfig = {}) {
     this.http = axios.create({
@@ -179,12 +176,6 @@ export class CometChatClient {
     this.CACHED_USERS_INITIALIZED = true;
     return this.CACHED_USERS;
   }
-
-  /**
-   * =============
-   * USER ENDPOINTS
-   * =============
-   */
 
   // GET /users
   async listUsers(options: ListUsersOptions = {}): Promise<ApiResponse<CometChatUser[]>> {
@@ -223,6 +214,78 @@ export class CometChatClient {
     const cachedUsers = await this.getCachedUsers();
     return cachedUsers.find((u) => u.metadata?.email === email);
   }
+
+  // POST /users/{uid}/friends
+  async addFriend(
+    uid: string,
+    payload: AddFriendRequest,
+  ): Promise<ApiResponse<AddFriendResponse>> {
+    const res = await this.http.post<ApiResponse<AddFriendResponse>>(
+      `/users/${encodeURIComponent(uid)}/friends`,
+      {
+        ...payload,
+        addToConversations: payload.addToConversations ?? true,
+      },
+      buildConfig(),
+    );
+    return res.data;
+  }
+
+  // GET /users/{uid}/friends
+  async listFriends(
+    uid: string,
+    payload: GetFriendsRequest,
+  ): Promise<ApiResponse<CometChatUser[]>> {
+    if (!payload.searchKey) delete payload.searchKey;
+    const res = await this.http.get<ApiResponse<CometChatUser[]>>(
+      `/users/${encodeURIComponent(uid)}/friends`,
+      buildConfig({
+        params: {
+          ...payload,
+        },
+      })
+    );
+    return res.data;
+  }
+
+  // async findCachedUsersByEmail(emailQuery: string): Promise<CometChatUser[] | undefined> {
+  //   const cachedUsers = await this.getCachedUsers();
+  //   const weighted = cachedUsers.map((u) => ({
+  //     ...u,
+  //     similarity: similarity(u.metadata?.email || '', emailQuery),
+  //   })).filter((u) => u.similarity > 0);
+  //   const sorted = weighted.sort((a, b) => b.similarity - a.similarity);
+  //   return sorted;
+  // }
+
+  async searchInCachedUsers(emailQuery: string): Promise<CometChatUser[] | undefined> {
+    const cachedUsers = await this.getCachedUsers();
+    const fuse = new Fuse(cachedUsers, {
+      keys: [
+        'name',
+        'metadata.email'
+      ],
+      threshold: 0.3,
+      includeScore: true
+    });
+    const results = fuse.search(emailQuery);
+    // console.log(results.map(u => ({ name: u.item.name, email: u.item.metadata?.email, score: u.score })));
+    const sorted = results.map(r => r.item);
+    return sorted;
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   // PUT /users/{uid}
   async updateUser(

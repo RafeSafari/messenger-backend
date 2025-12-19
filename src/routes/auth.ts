@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
 import { login, register } from '../library/cometChatApi';
+import { env } from '../env';
 
 const router = Router();
 
@@ -18,12 +19,13 @@ router.post('/login', async (req, res) => {
   }
 
   const token = jwt.sign(
-    { userId: user.id },
-    process.env.JWT_SECRET as string,
+    { uid: user.uid, name: user.name, email: user.metadata?.email },
+    env.JWT_SECRET,
     { expiresIn: '1d' }
   );
 
-  res.json({ message: 'Successful login', token, user });
+  res.cookie('token', token, { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
+  res.json({ message: "Successful login", user });
 });
 
 router.post('/register', async (req, res) => {
