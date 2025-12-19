@@ -7,7 +7,7 @@ export function authMiddleware(
   res: Response,
   next: NextFunction
 ) {
-  const token = req.headers.authorization ? req.headers.authorization.split(' ')[1] : req.headers.cookie ? req.headers.cookie.split('=')[1] : null;
+  const token = req.headers.authorization?.split(' ')[1] || req.cookies.token;
   if (!token) {
     return res.status(401).json({ message: 'No token provided' });
   }
