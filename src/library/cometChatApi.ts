@@ -3,6 +3,7 @@ import { CometChatClient, CometChatUser, GetFriendsRequest } from "./cometChatCl
 import bcrypt from 'bcrypt';
 const cometClient = new CometChatClient();
 
+export const parseUsersListToClient = async (users: CometChatUser[]) => await cometClient.parseUsersList(users);
 
 // #region // * AUTH
 export const register = async (body: {name: string, email: string, password: string}): Promise<CometChatUser|null> => {
@@ -73,3 +74,12 @@ export const searchUsers = async (emailQuery: string) => {
   }
 }
 // #endregion
+
+export const getUser = async (uid: string, params: { uid: string }) => {
+  try {
+    return await cometClient.getUserById(params.uid, { onBehalfOf: uid });
+  } catch (err: any) {
+    console.error(err.response?.data ?? err.message);
+    return null;
+  }
+}

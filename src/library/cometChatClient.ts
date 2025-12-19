@@ -5,7 +5,7 @@ import { env } from '../env';
 // Default axios config
 export const AXIOS_DEFAULT_CONFIG: AxiosRequestConfig = {
   baseURL: `https://${env.COMETCHAT_APP_ID}.api-${env.COMETCHAT_REGION}.cometchat.io/v3`,
-  timeout: 10000,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
     apikey: env.COMETCHAT_API_KEY,
@@ -175,6 +175,16 @@ export class CometChatClient {
     this.CACHED_USERS = (await this.listUsers({ perPage: 1000 })).data || [];
     this.CACHED_USERS_INITIALIZED = true;
     return this.CACHED_USERS;
+  }
+
+  async parseUsersList(users: CometChatUser[]) {
+    // const cached = await this.getCachedUsers();
+    return users.map((user) => ({
+      // ...cached.find((u) => u.uid === user.uid),
+      ...user,
+      email: user.metadata?.email,
+      metadata: undefined,
+    }));
   }
 
   // GET /users

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { addFriends, searchUsers, getFriends } from '../library/cometChatApi';
+import { addFriends, searchUsers, getFriends, parseUsersListToClient, getUser, } from '../library/cometChatApi';
 
 const router = Router();
 
@@ -29,11 +29,12 @@ router.get('/', async (req, res) => {
     return res.status(400).json({ message: 'Something went wrong' });
   }
 
-  const contacts = result?.data?.map((user) => {
-    return { ...user, email: user.metadata?.email, metadata: undefined };
-  });
+  const contacts = await parseUsersListToClient(result?.data || []);
 
-  res.json({ message: `Got ${contacts?.length} contacts`, contacts });
+  res.json({
+    message: `Got ${contacts?.length} contacts`,
+    contacts,
+  });
 });
 
 router.get('/find-user', async (req, res) => {
@@ -43,14 +44,29 @@ router.get('/find-user', async (req, res) => {
     return res.status(400).json({ message: 'Something went wrong' });
   }
 
+  const parsedUsers = await parseUsersListToClient(users.filter((u) => u.uid !== req.user.uid));
+
   res.json({
     message: `Got ${users?.length} users`,
     // exclude self from results
-    users: users
-      .filter((u) => u.uid !== req.user.uid)
-      ?.map((user) => {
-        return { ...user, email: user.metadata?.email, metadata: undefined };
-      }),
+    users: parsedUsers,
+  });
+});
+
+router.get('/{:uid}', async (req, res) => {
+  if (!req.params['uid']) return res.status(400).json({ message: 'Missing uid' });
+
+  const result = await getUser(req.user.uid, { uid: req.params['uid'] });
+
+  if (!result) {
+    return res.status(400).json({ message: 'Something went wrong' });
+  }
+
+  const parsed = (await parseUsersListToClient([result]))[0];
+
+  res.json({
+    message: `Got ${parsed?.name}`,
+    user: parsed,
   });
 });
 
