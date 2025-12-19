@@ -29,7 +29,9 @@ router.get('/', async (req, res) => {
     return res.status(400).json({ message: 'Something went wrong' });
   }
 
-  const contacts = result?.data;
+  const contacts = result?.data?.map((user) => {
+    return { ...user, email: user.metadata?.email, metadata: undefined };
+  });
 
   res.json({ message: `Got ${contacts?.length} contacts`, contacts });
 });
@@ -44,7 +46,11 @@ router.get('/find-user', async (req, res) => {
   res.json({
     message: `Got ${users?.length} users`,
     // exclude self from results
-    users: users.filter((u) => u.uid !== req.user.uid),
+    users: users
+      .filter((u) => u.uid !== req.user.uid)
+      ?.map((user) => {
+        return { ...user, email: user.metadata?.email, metadata: undefined };
+      }),
   });
 });
 
