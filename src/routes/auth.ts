@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
-import { login, register } from '../library/cometChatApi';
+import { login, parseUsersListToClient, register } from '../library/cometChatApi';
 import { env } from '../env';
 
 const router = Router();
+
+const createToken = (uid: string, name: string, email: string) => jwt.sign({ uid, name, email }, env.JWT_SECRET, { expiresIn: '1d' });
 
 router.post('/login', async (req, res) => {
   const body = req.body;
@@ -18,14 +20,11 @@ router.post('/login', async (req, res) => {
     return res.status(401).json({ message: 'Username or password is incorrect' });
   }
 
-  const token = jwt.sign(
-    { uid: user.uid, name: user.name, email: user.metadata?.email },
-    env.JWT_SECRET,
-    { expiresIn: '1d' }
-  );
+  const token = createToken(user.uid, user.name, user.metadata?.email);
+  res.cookie('chat-app-token', token, { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
 
-  res.cookie('token', token, { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
-  res.json({ message: "Successful login", user });
+  const parsed = (await parseUsersListToClient([user]))[0];
+  res.json({ message: "Successful login", user: parsed });
 });
 
 router.post('/register', async (req, res) => {
@@ -42,13 +41,16 @@ router.post('/register', async (req, res) => {
     return res.status(400).json({ message: 'Already registered' });
   }
 
-  // const token = jwt.sign(
-  //   { userId: user.id },
-  //   process.env.JWT_SECRET as string,
-  //   { expiresIn: '1d' }
-  // );
+  const token = createToken(user.uid, user.name, user.metadata?.email);
+  res.cookie('chat-app-token', token, { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
+  
+  const parsed = (await parseUsersListToClient([user]))[0];
+  res.json({ message: 'User registered', user: parsed });
+});
 
-  res.json({ message: 'User registered', user });
+router.get('/logout', async (req, res) => {
+  res.clearCookie('chat-app-token', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
+  res.json({ message: "Successful logout" });
 });
 
 export default router;

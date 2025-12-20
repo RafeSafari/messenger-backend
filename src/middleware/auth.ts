@@ -7,7 +7,7 @@ export function authMiddleware(
   res: Response,
   next: NextFunction
 ) {
-  const token = req.headers.authorization?.split(' ')[1] || req.cookies.token;
+  const token = req.headers.authorization?.split(' ')[1] || req.cookies['chat-app-token'];
   if (!token) {
     return res.status(401).json({ message: 'No token provided' });
   }
