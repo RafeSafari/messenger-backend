@@ -3,11 +3,11 @@ import jwt from 'jsonwebtoken';
 import { login, parseUsersListToClient, register } from '../library/cometChatApi';
 import { env } from '../env';
 
-const router = Router();
+const authRouter = Router();
 
 const createToken = (uid: string, name: string, email: string) => jwt.sign({ uid, name, email }, env.JWT_SECRET, { expiresIn: '1d' });
 
-router.post('/login', async (req, res) => {
+authRouter.post('/login', async (req, res) => {
   const body = req.body;
 
   if (!body) return res.status(400).json({ message: 'Missing body' });
@@ -27,7 +27,7 @@ router.post('/login', async (req, res) => {
   res.json({ message: "Successful login", user: parsed });
 });
 
-router.post('/register', async (req, res) => {
+authRouter.post('/register', async (req, res) => {
   const body = req.body;
 
   if (!body) return res.status(400).json({ message: 'Missing body' });
@@ -48,9 +48,9 @@ router.post('/register', async (req, res) => {
   res.json({ message: 'User registered', user: parsed });
 });
 
-router.get('/logout', async (req, res) => {
+authRouter.get('/logout', async (req, res) => {
   res.clearCookie('chat-app-token', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
   res.json({ message: "Successful logout" });
 });
 
-export default router;
+export default authRouter;

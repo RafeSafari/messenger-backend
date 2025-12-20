@@ -40,9 +40,17 @@ export interface CreateUserRequest {
 
 export type UpdateUserRequest = Partial<Omit<CreateUserRequest, 'uid'>>;
 
-export type ReceiverType = 'user' | 'group';
+export enum ReceiverType { User = 'user', Group = 'group' };
 
-export type MessageCategory = 'message' | 'custom' | 'interactive';
+export enum MessageCategory { Message = 'message', Custom = 'custom', Interactive = 'interactive' }
+
+export enum MessageType {
+  text = "text",
+  image = "image",
+  file = "file",
+  audio = "audio",
+  video = "video",
+}
 
 export interface MessageData {
   text?: string;
@@ -51,9 +59,9 @@ export interface MessageData {
 
 export interface SendMessageRequest {
   receiver: string; // uid or guid
-  receiverType: ReceiverType;
-  category: MessageCategory;
-  type: string; // 'text' | 'image' | etc.
+  receiverType?: ReceiverType;
+  category?: MessageCategory;
+  type?: MessageType;
   data: MessageData;
   [key: string]: unknown;
 }
@@ -117,16 +125,23 @@ export interface ListUserMessagesOptions {
   [key: string]: unknown;
 }
 
-export interface Conversation {
-  conversationId: string;
-  lastMessage?: CometChatMessage;
-  unreadMessageCount?: number;
-  [key: string]: unknown;
+interface ResponseMeta {
+  pagination?: {
+    total?: number,
+    count?: number,
+    per_page?: number,
+    current_page?: number,
+    total_pages?: number
+  },
+  cursor?: {
+    id?: number,
+    affix?: string
+  }
 }
 
 export interface ApiResponse<T = unknown> {
   data?: T;
-  [key: string]: unknown;
+  meta?: ResponseMeta,
 }
 // #endregion
 
@@ -225,6 +240,22 @@ export class CometChatClient {
     return cachedUsers.find((u) => u.metadata?.email === email);
   }
 
+  async searchInCachedUsers(emailQuery: string): Promise<CometChatUser[] | undefined> {
+    const cachedUsers = await this.getCachedUsers();
+    const fuse = new Fuse(cachedUsers, {
+      keys: [
+        'name',
+        'metadata.email'
+      ],
+      threshold: 0.3,
+      includeScore: true
+    });
+    const results = fuse.search(emailQuery);
+    // console.log(results.map(u => ({ name: u.item.name, email: u.item.metadata?.email, score: u.score })));
+    const sorted = results.map(r => r.item);
+    return sorted;
+  }
+
   // POST /users/{uid}/friends
   async addFriend(
     uid: string,
@@ -258,30 +289,34 @@ export class CometChatClient {
     return res.data;
   }
 
-  // async findCachedUsersByEmail(emailQuery: string): Promise<CometChatUser[] | undefined> {
-  //   const cachedUsers = await this.getCachedUsers();
-  //   const weighted = cachedUsers.map((u) => ({
-  //     ...u,
-  //     similarity: similarity(u.metadata?.email || '', emailQuery),
-  //   })).filter((u) => u.similarity > 0);
-  //   const sorted = weighted.sort((a, b) => b.similarity - a.similarity);
-  //   return sorted;
-  // }
+  // POST /messages
+  async sendMessage(
+    messagePayload: SendMessageRequest,
+    { onBehalfOf }: { onBehalfOf?: string } = {},
+  ): Promise<ApiResponse<CometChatMessage>> {
+    const res = await this.http.post<ApiResponse<CometChatMessage>>(
+      '/messages',
+      {
+        receiverType: ReceiverType.User,
+        category: MessageCategory.Message,
+        type: MessageType.text,
+        ...messagePayload,
+      },
+      buildConfig({ onBehalfOf }),
+    );
+    return res.data;
+  }
 
-  async searchInCachedUsers(emailQuery: string): Promise<CometChatUser[] | undefined> {
-    const cachedUsers = await this.getCachedUsers();
-    const fuse = new Fuse(cachedUsers, {
-      keys: [
-        'name',
-        'metadata.email'
-      ],
-      threshold: 0.3,
-      includeScore: true
-    });
-    const results = fuse.search(emailQuery);
-    // console.log(results.map(u => ({ name: u.item.name, email: u.item.metadata?.email, score: u.score })));
-    const sorted = results.map(r => r.item);
-    return sorted;
+  // GET /users/{uid}/messages
+  async getUserMessages(
+    uid: string,
+    { onBehalfOf }: { onBehalfOf?: string } = {},
+  ): Promise<ApiResponse<any[]>> {
+    const res = await this.http.get<ApiResponse<any[]>>(
+      `/users/${encodeURIComponent(uid)}/messages`,
+      buildConfig({ onBehalfOf }),
+    );
+    return res.data;
   }
 
 
@@ -318,17 +353,6 @@ export class CometChatClient {
    */
 
   // POST /messages
-  async sendMessage(
-    messagePayload: SendMessageRequest,
-    { onBehalfOf }: { onBehalfOf?: string } = {},
-  ): Promise<ApiResponse<CometChatMessage>> {
-    const res = await this.http.post<ApiResponse<CometChatMessage>>(
-      '/messages',
-      messagePayload,
-      buildConfig({ onBehalfOf }),
-    );
-    return res.data;
-  }
 
   // GET /messages (global list)
   async listMessages(
@@ -357,18 +381,6 @@ export class CometChatClient {
     const res = await this.http.get<ApiResponse<CometChatMessage[]>>(
       `/users/${encodeURIComponent(uid)}/messages`,
       buildConfig({ onBehalfOf, params }),
-    );
-    return res.data;
-  }
-
-  // GET /users/{uid}/conversation
-  async getUserConversation(
-    uid: string,
-    { onBehalfOf }: { onBehalfOf?: string } = {},
-  ): Promise<ApiResponse<Conversation>> {
-    const res = await this.http.get<ApiResponse<Conversation>>(
-      `/users/${encodeURIComponent(uid)}/conversation`,
-      buildConfig({ onBehalfOf }),
     );
     return res.data;
   }

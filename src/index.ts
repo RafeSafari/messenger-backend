@@ -1,10 +1,12 @@
 import express from 'express';
 import cors from 'cors';
 import { env } from './env';
-import authRoutes from './routes/auth';
-import contactRoutes from './routes/contacts';
 import { authMiddleware } from './middleware/auth';
 import cookieParser from 'cookie-parser';
+
+import authRouter from './routes/auth';
+import contactsRouter from './routes/contacts';
+import chatRouter from './routes/chat';
 
 const app = express();
 
@@ -29,13 +31,14 @@ app.use(express.json());
 app.use(cookieParser());
 
 // ! public routes
-app.use('/auth', authRoutes);
+app.use('/auth', authRouter);
 
 
 app.use(authMiddleware);
 // ! protected routes
 
-app.use('/contacts', contactRoutes);
+app.use('/contacts', contactsRouter);
+app.use('/chat', chatRouter);
 
 const PORT = env.PORT || 50005;
 app.listen(PORT, () => {

@@ -83,3 +83,36 @@ export const getUser = async (uid: string, params: { uid: string }) => {
     return null;
   }
 }
+
+
+// #region // * Messages
+export const sendMessage = async (uid: string, params: {
+  receiverId: string;
+  text: string;
+}) => {
+  try {
+    return await cometClient.sendMessage({
+      receiver: params.receiverId,
+      data: {
+        text: params.text,
+      }
+    }, { onBehalfOf: uid });
+  } catch (err: any) {
+    console.error(err.response?.data ?? err.message);
+    return null;
+  }
+}
+
+export const getConversation = async (uid: string, params: {
+  contactId: string;
+}) => {
+  try {
+    return await cometClient.getUserMessages(params.contactId, {
+      onBehalfOf: uid,
+    });
+  } catch (err: any) {
+    console.error(err.response?.data ?? err.message);
+    return null;
+  }
+}
+// #endregion
