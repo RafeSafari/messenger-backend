@@ -65,7 +65,7 @@ router.get('/{:uid}', async (req, res) => {
   const parsed = (await parseUsersListToClient([result]))[0];
 
   res.json({
-    message: `Got ${parsed?.name}`,
+    message: `Got "${parsed?.name}"`,
     user: parsed,
   });
 });

@@ -1,6 +1,6 @@
 import 'dotenv/config';
 
-const requireEnv = (name: string): string => {
+const loadEnv = (name: string): string => {
   const value = process.env[name];
   if (!value) {
     throw new Error(`Missing env var: ${name}`);
@@ -10,8 +10,8 @@ const requireEnv = (name: string): string => {
 
 export const env = {
   PORT: Number(process.env.PORT ?? 50005),
-  JWT_SECRET: requireEnv('JWT_SECRET'),
-  COMETCHAT_APP_ID: requireEnv('COMETCHAT_APP_ID'),
-  COMETCHAT_REGION: requireEnv('COMETCHAT_REGION'),
-  COMETCHAT_API_KEY: requireEnv('COMETCHAT_API_KEY'),
+  JWT_SECRET: loadEnv('JWT_SECRET'),
+  COMETCHAT_APP_ID: loadEnv('COMETCHAT_APP_ID'),
+  COMETCHAT_REGION: loadEnv('COMETCHAT_REGION'),
+  COMETCHAT_API_KEY: loadEnv('COMETCHAT_API_KEY'),
 };
