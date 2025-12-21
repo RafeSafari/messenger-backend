@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { addFriends, searchUsers, getFriends, parseUsersListToClient, getUser } from '../library/cometChatApi';
+import { sendToUser } from '../socket';
 
 const contactsRouter = Router();
 
@@ -7,15 +8,29 @@ contactsRouter.post('/', async (req, res) => {
   const body = req.body;
 
   if (!body) return res.status(400).json({ message: 'Missing body' });
-  if (!body.uids) return res.status(400).json({ message: 'Missing uids' });
+  if (!body.uid) return res.status(400).json({ message: 'Missing uid' });
 
-  const result = await addFriends(req.user.uid, body.uids);
+  const result = await addFriends(req.user.uid, [body.uid]);
 
   if (!result) {
     return res.status(500).json({ message: 'Something went wrong' });
   }
 
-  res.json({ message: `Added ${body.uids.length} friends`, res: result?.data?.accepted });
+  if (!result?.data?.accepted?.[body.uid]?.success) {
+    return res.status(500).json({ message: 'Failed to add contact' });
+  }
+  
+  // emit contact add to the target
+  if (body.uid) {
+    const sent = sendToUser(body.uid, "new-contact", req.user.uid);
+    if (sent) {
+      console.log(`Contact add trigger sent to ${body.uid} via socket`);
+    } else {
+      console.log(`${body.uid} is offline`);
+    }
+  }
+
+  res.json({ message: `Added ${body.uid} to friends`, res: result?.data?.accepted });
 });
 
 contactsRouter.get('/', async (req, res) => {
