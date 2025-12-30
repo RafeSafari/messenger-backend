@@ -35,17 +35,21 @@ authRouter.post('/register', async (req, res) => {
   if (!body.email) return res.status(400).json({ message: 'Missing email' });
   if (!body.password) return res.status(400).json({ message: 'Missing password' });
 
-  const user = await register(body);
+  const result = await register(body);
 
-  if (!user) {
-    return res.status(400).json({ message: 'Already registered' });
+  if (!result.success) {
+    const statusCode = result.code === 'EMAIL_EXISTS' ? 409 : result.code === 'INVALID_DATA' ? 400 : 500;
+    return res.status(statusCode).json({ 
+      message: result.error,
+      code: result.code
+    });
   }
 
-  const token = createToken(user.uid, user.name, user.metadata?.email);
+  const token = createToken(result.user.uid, result.user.name, result.user.metadata?.email);
   res.cookie('chat-app-token', token, { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
   
-  const parsed = (await parseUsersListToClient([user]))[0];
-  res.json({ message: 'User registered', user: parsed });
+  const parsed = (await parseUsersListToClient([result.user]))[0];
+  res.json({ message: 'User registered successfully', user: parsed });
 });
 
 authRouter.get('/logout', async (req, res) => {
