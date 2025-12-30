@@ -2,7 +2,7 @@
   "name": "messenger-backend",
   "version": "1.0.0",
   "description": "",
-  "main": "server.js",
+  "main": "src/index.ts",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "debug": "tsx --inspect src/index.ts",

@@ -1,12 +1,16 @@
 import { randomUUID } from "node:crypto";
-import { CometChatClient, CometChatUser, GetFriendsRequest } from "./cometChatClient";
+import { CometChatClient, CometChatUser, GetFriendsRequest } from "./cometChatClient.js";
 import bcrypt from 'bcrypt';
 const cometClient = new CometChatClient();
 
 export const parseUsersListToClient = async (users: CometChatUser[]) => await cometClient.parseUsersList(users);
 
 // #region // * AUTH
-export const register = async (body: {name: string, email: string, password: string}): Promise<CometChatUser|null> => {
+export type RegisterResult = 
+  | { success: true; user: CometChatUser }
+  | { success: false; error: string; code: 'EMAIL_EXISTS' | 'INVALID_DATA' | 'SERVER_ERROR' };
+
+export const register = async (body: {name: string, email: string, password: string}): Promise<RegisterResult> => {
   try {
     const response = await cometClient.createUser({
       uid: randomUUID(),
@@ -18,10 +22,27 @@ export const register = async (body: {name: string, email: string, password: str
         }
       }
     });
-    return response.data || null;
+    
+    if (!response.data) {
+      return { success: false, error: 'Failed to create user account', code: 'SERVER_ERROR' };
+    }
+    
+    return { success: true, user: response.data };
   } catch (err: any) {
     console.error(err);
-    return null;
+    
+    // Check if it's an email already exists error
+    if (err.message?.includes('already exists') || err.response?.data?.error?.includes('already exists')) {
+      return { success: false, error: 'An account with this email already exists', code: 'EMAIL_EXISTS' };
+    }
+    
+    // Check for validation errors from CometChat API
+    if (err.response?.data?.error) {
+      return { success: false, error: err.response.data.error, code: 'INVALID_DATA' };
+    }
+    
+    // Generic server error
+    return { success: false, error: 'Unable to create account. Please try again later', code: 'SERVER_ERROR' };
   }
 };
 

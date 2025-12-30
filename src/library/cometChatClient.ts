@@ -1,6 +1,6 @@
 import Fuse from 'fuse.js';
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
-import { env } from '../env';
+import { env } from '../env.js';
 
 // Default axios config
 export const AXIOS_DEFAULT_CONFIG: AxiosRequestConfig = {
@@ -37,8 +37,6 @@ export interface CreateUserRequest {
   tags?: string[];
   withAuthToken?: boolean;
 }
-
-export type UpdateUserRequest = Partial<Omit<CreateUserRequest, 'uid'>>;
 
 export enum ReceiverType { User = 'user', Group = 'group' };
 
@@ -104,25 +102,6 @@ export interface GetFriendsRequest {
   searchKey?: string;
   perPage?: number;
   page?: number;
-}
-
-export interface ListMessagesOptions {
-  onBehalfOf?: string;
-  limit?: number;
-  conversationId?: string;
-  sender?: string;
-  receiver?: string;
-  receiverType?: ReceiverType;
-  category?: MessageCategory;
-  type?: string;
-  [key: string]: unknown;
-}
-
-export interface ListUserMessagesOptions {
-  onBehalfOf?: string;
-  limit?: number;
-  // other query params, e.g. { messageId, timestamp, etc. }
-  [key: string]: unknown;
 }
 
 interface ResponseMeta {
@@ -193,9 +172,7 @@ export class CometChatClient {
   }
 
   async parseUsersList(users: CometChatUser[]) {
-    // const cached = await this.getCachedUsers();
     return users.map((user) => ({
-      // ...cached.find((u) => u.uid === user.uid),
       ...user,
       email: user.metadata?.email,
       metadata: undefined,
@@ -251,7 +228,6 @@ export class CometChatClient {
       includeScore: true
     });
     const results = fuse.search(emailQuery);
-    // console.log(results.map(u => ({ name: u.item.name, email: u.item.metadata?.email, score: u.score })));
     const sorted = results.map(r => r.item);
     return sorted;
   }
@@ -315,142 +291,6 @@ export class CometChatClient {
     const res = await this.http.get<ApiResponse<any[]>>(
       `/users/${encodeURIComponent(uid)}/messages`,
       buildConfig({ onBehalfOf }),
-    );
-    return res.data;
-  }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  // PUT /users/{uid}
-  async updateUser(
-    uid: string,
-    payload: UpdateUserRequest,
-    { onBehalfOf }: { onBehalfOf?: string } = {},
-  ): Promise<ApiResponse<CometChatUser>> {
-    const res = await this.http.put<ApiResponse<CometChatUser>>(
-      `/users/${encodeURIComponent(uid)}`,
-      payload,
-      buildConfig({ onBehalfOf }),
-    );
-    return res.data;
-  }
-
-  /**
-   * ==============
-   * MESSAGE APIS
-   * ==============
-   */
-
-  // POST /messages
-
-  // GET /messages (global list)
-  async listMessages(
-    options: ListMessagesOptions = {},
-  ): Promise<ApiResponse<CometChatMessage[]>> {
-    const { onBehalfOf, ...params } = options;
-    const res = await this.http.get<ApiResponse<CometChatMessage[]>>(
-      '/messages',
-      buildConfig({ onBehalfOf, params }),
-    );
-    return res.data;
-  }
-
-  /**
-   * ===================
-   * USER MESSAGES / CONVERSATIONS
-   * ===================
-   */
-
-  // GET /users/{uid}/messages
-  async listUserMessages(
-    uid: string,
-    options: ListUserMessagesOptions = {},
-  ): Promise<ApiResponse<CometChatMessage[]>> {
-    const { onBehalfOf, ...params } = options;
-    const res = await this.http.get<ApiResponse<CometChatMessage[]>>(
-      `/users/${encodeURIComponent(uid)}/messages`,
-      buildConfig({ onBehalfOf, params }),
-    );
-    return res.data;
-  }
-
-  // POST /users/{uid}/conversation/read
-  async markUserConversationRead(
-    uid: string,
-    messageId: string | number,
-    { onBehalfOf }: { onBehalfOf?: string } = {},
-  ): Promise<ApiResponse> {
-    const body = { messageId };
-    const res = await this.http.post<ApiResponse>(
-      `/users/${encodeURIComponent(uid)}/conversation/read`,
-      body,
-      buildConfig({ onBehalfOf }),
-    );
-    return res.data;
-  }
-
-  // DELETE /users/{uid}/conversation/read (optional extra)
-  async markUserConversationUnread(
-    uid: string,
-    messageId: string | number,
-    { onBehalfOf }: { onBehalfOf?: string } = {},
-  ): Promise<ApiResponse> {
-    const body = { messageId };
-    const res = await this.http.delete<ApiResponse>(
-      `/users/${encodeURIComponent(uid)}/conversation/read`,
-      {
-        ...buildConfig({ onBehalfOf }),
-        data: body, // axios uses `data` for DELETE body
-      },
-    );
-    return res.data;
-  }
-
-  /**
-   * ===================
-   * GROUP CONVERSATION HELPERS (OPTIONAL)
-   * ===================
-   */
-
-  // POST /groups/{guid}/conversation/read
-  async markGroupConversationRead(
-    guid: string,
-    messageId: string | number,
-    { onBehalfOf }: { onBehalfOf?: string } = {},
-  ): Promise<ApiResponse> {
-    const body = { messageId };
-    const res = await this.http.post<ApiResponse>(
-      `/groups/${encodeURIComponent(guid)}/conversation/read`,
-      body,
-      buildConfig({ onBehalfOf }),
-    );
-    return res.data;
-  }
-
-  // DELETE /groups/{guid}/conversation/read
-  async markGroupConversationUnread(
-    guid: string,
-    messageId: string | number,
-    { onBehalfOf }: { onBehalfOf?: string } = {},
-  ): Promise<ApiResponse> {
-    const body = { messageId };
-    const res = await this.http.delete<ApiResponse>(
-      `/groups/${encodeURIComponent(guid)}/conversation/read`,
-      {
-        ...buildConfig({ onBehalfOf }),
-        data: body,
-      },
     );
     return res.data;
   }
