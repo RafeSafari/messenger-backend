@@ -38,7 +38,6 @@ app.get("/", (_, res) => res.send("Server running"));
 // ! public routes
 app.use('/auth', authRouter);
 
-
 app.use(authMiddleware);
 // ! protected routes
 

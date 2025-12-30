@@ -63,7 +63,6 @@ contactsRouter.get('/find-user', async (req, res) => {
 
   res.json({
     message: `Got ${users?.length} users`,
-    // exclude self from results
     users: parsedUsers,
   });
 });

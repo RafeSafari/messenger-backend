@@ -45,14 +45,6 @@ export function initSocket(server: HttpServer) {
 }
 
 /** 
- * Helper to get socket instance
- */
-export function getIO(): Server {
-  if (!io) throw new Error("Socket.io not initialized");
-  return io;
-}
-
-/** 
  * Send message to specific user
  */
 export function sendToUser(userId: string, event: string, data: any) {
