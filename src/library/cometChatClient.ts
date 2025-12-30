@@ -1,6 +1,6 @@
 import Fuse from 'fuse.js';
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
-import { env } from '../env';
+import { env } from '../env.js';
 
 // Default axios config
 export const AXIOS_DEFAULT_CONFIG: AxiosRequestConfig = {

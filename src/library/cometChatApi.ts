@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { CometChatClient, CometChatUser, GetFriendsRequest } from "./cometChatClient";
+import { CometChatClient, CometChatUser, GetFriendsRequest } from "./cometChatClient.js";
 import bcrypt from 'bcrypt';
 const cometClient = new CometChatClient();
 

@@ -1,14 +1,14 @@
 import express from 'express';
 import cors from 'cors';
-import { env } from './env';
-import { authMiddleware } from './middleware/auth';
+import { env } from './env.js';
+import { authMiddleware } from './middleware/auth.js';
 import cookieParser from 'cookie-parser';
 import { createServer } from "http";
 
-import authRouter from './routes/auth';
-import contactsRouter from './routes/contacts';
-import chatRouter from './routes/chat';
-import { initSocket } from "./socket";
+import authRouter from './routes/auth.js';
+import contactsRouter from './routes/contacts.js';
+import chatRouter from './routes/chat.js';
+import { initSocket } from "./socket.js";
 
 const app = express();
 

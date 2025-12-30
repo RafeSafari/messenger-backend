@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { env } from '../env';
+import { env } from '../env.js';
 
 export function authMiddleware(
   req: Request,
@@ -9,7 +9,6 @@ export function authMiddleware(
 ) {
   const token = req.headers.authorization?.split(' ')[1] || req.cookies['chat-app-token'];
   if (!token) {
-    console.log(req.url, 'chat-app-token', req.cookies['chat-app-token'])
     return res.status(401).json({ message: 'No token provided' });
   }
 

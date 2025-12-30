@@ -23,18 +23,18 @@ export function initSocket(server: HttpServer) {
   });
 
   io.on("connection", (socket) => {
-    console.log("Socket connected:", socket.id);
+    console.debug("Socket connected:", socket.id);
 
     socket.on("register", (userId: string) => {
       onlineUsers.set(userId, socket.id);
-      console.log("User registered:", userId);
+      console.debug("User registered:", userId);
     });
 
     socket.on("disconnect", () => {
       for (const [userId, sId] of onlineUsers.entries()) {
         if (sId === socket.id) {
           onlineUsers.delete(userId);
-          console.log("User disconnected:", userId);
+          console.debug("User disconnected:", userId);
           break;
         }
       }

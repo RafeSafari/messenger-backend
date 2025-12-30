@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { getConversation, sendMessage } from '../library/cometChatApi';
-import { sendToUser } from '../socket';
+import { getConversation, sendMessage } from '../library/cometChatApi.js';
+import { sendToUser } from '../socket.js';
 
 const chatRouter = Router();
 

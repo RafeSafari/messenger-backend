@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { addFriends, searchUsers, getFriends, parseUsersListToClient, getUser } from '../library/cometChatApi';
-import { sendToUser } from '../socket';
+import { addFriends, searchUsers, getFriends, parseUsersListToClient, getUser } from '../library/cometChatApi.js';
+import { sendToUser } from '../socket.js';
 
 const contactsRouter = Router();
 

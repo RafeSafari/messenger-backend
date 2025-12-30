@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
-import { login, parseUsersListToClient, register } from '../library/cometChatApi';
-import { env } from '../env';
+import { login, parseUsersListToClient, register } from '../library/cometChatApi.js';
+import { env } from '../env.js';
 
 const authRouter = Router();
 
