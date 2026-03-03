@@ -51,5 +51,8 @@ export function sendToUser(userId: string, event: string, data: any) {
   const socketId = onlineUsers.get(userId);
   if (!socketId) return false;
   io?.to(socketId).emit(event, data);
+  console.log('socketId', socketId)
+  console.log('event', event)
+  console.log('data', data)
   return true;
 }

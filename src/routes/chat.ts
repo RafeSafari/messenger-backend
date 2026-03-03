@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { getConversation, sendMessage } from '../library/cometChatApi.js';
+// import { getConversation, sendMessage } from '../library/cometChatApi.js';
+import { getConversation, sendMessage } from '../library/inMemoryChatApi.js';
 import { sendToUser } from '../socket.js';
 
 const chatRouter = Router();
@@ -20,13 +21,17 @@ chatRouter.post('/user/{:uid}', async (req, res) => {
     return res.status(500).json({ message: 'Something went wrong' });
   }
 
+  if (result?.error) {
+    return res.status(result?.error?.status || 500).json(result?.error);
+  }
+
   // emit message to the receiver
   if (result?.data?.receiver) {
     const sent = sendToUser(result?.data?.receiver, "text-message", result?.data);
     if (sent) {
-      console.log(`Message sent to ${result?.data?.receiver} via socket`);
+      console.debug(`Message sent to ${result?.data?.receiver} via socket`);
     } else {
-      console.log(`${result?.data?.receiver} is offline`);
+      console.debug(`${result?.data?.receiver} is offline`);
     }
   }
 

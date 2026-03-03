@@ -1,6 +1,8 @@
 import { Router } from 'express';
-import { addFriends, searchUsers, getFriends, parseUsersListToClient, getUser } from '../library/cometChatApi.js';
+// import { addFriends, searchUsers, getFriends, parseUsersListToClient, getUser } from '../library/cometChatApi.js';
+import { addFriends, searchUsers, getFriends, parseUsersListToClient, getUser } from '../library/inMemoryChatApi.js';
 import { sendToUser } from '../socket.js';
+import sumUUIDs from '../library/sumUUIDs.js';
 
 const contactsRouter = Router();
 
@@ -16,8 +18,12 @@ contactsRouter.post('/', async (req, res) => {
     return res.status(500).json({ message: 'Something went wrong' });
   }
 
+  if (result?.error) {
+    return res.status(result?.error?.status || 500).json(result?.error);
+  }
+
   if (!result?.data?.accepted?.[body.uid]?.success) {
-    return res.status(500).json({ message: 'Failed to add contact' });
+    return res.status(400).json({ message: 'No contact found' });
   }
   
   // emit contact add to the target
@@ -73,14 +79,17 @@ contactsRouter.get('/{:uid}', async (req, res) => {
   const result = await getUser(req.user.uid, { uid: req.params['uid'] });
 
   if (!result) {
-    return res.status(500).json({ message: 'Something went wrong' });
+    return res.status(404).json({ message: 'User Not Found!' });
   }
 
   const parsed = (await parseUsersListToClient([result]))[0];
 
   res.json({
     message: `Got "${parsed?.name}"`,
-    user: parsed,
+    user: {
+      ...parsed,
+      conversationId: sumUUIDs(req.user.uid, parsed?.uid || ''),
+    },
   });
 });
 

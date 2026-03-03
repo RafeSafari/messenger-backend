@@ -9,6 +9,7 @@ import authRouter from './routes/auth.js';
 import contactsRouter from './routes/contacts.js';
 import chatRouter from './routes/chat.js';
 import { initSocket } from "./socket.js";
+import adminRouter from './routes/admin.js';
 
 const app = express();
 
@@ -34,6 +35,9 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.get("/", (_, res) => res.send("Server running"));
+
+// ! admin routes
+app.use('/admin', adminRouter);
 
 // ! public routes
 app.use('/auth', authRouter);
