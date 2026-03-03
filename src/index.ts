@@ -11,6 +11,11 @@ import chatRouter from './routes/chat.js';
 import { initSocket } from "./socket.js";
 import adminRouter from './routes/admin.js';
 
+import { fileURLToPath } from "url";
+import path from "path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 
 // ! middlewares
@@ -34,19 +39,23 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
-app.get("/", (_, res) => res.send("Server running"));
-
 // ! admin routes
-app.use('/admin', adminRouter);
+app.use('/api/admin', adminRouter);
 
 // ! public routes
-app.use('/auth', authRouter);
+app.use('/api/auth', authRouter);
 
-app.use(authMiddleware);
+app.use('/api', authMiddleware);
 // ! protected routes
 
-app.use('/contacts', contactsRouter);
-app.use('/chat', chatRouter);
+app.use('/api/contacts', contactsRouter);
+app.use('/api/chat', chatRouter);
+
+// ! public
+app.use(express.static(path.join(__dirname, "public")));
+app.use((req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
 
 const httpServer = createServer(app);
 initSocket(httpServer);
