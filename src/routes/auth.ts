@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
-// import { login, parseUsersListToClient, register } from '../library/cometChatApi.js';
 import { login, parseUsersListToClient, register } from '../library/inMemoryChatApi.js';
 import { env } from '../env.js';
 

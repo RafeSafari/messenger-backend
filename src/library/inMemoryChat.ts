@@ -1,7 +1,7 @@
 import Fuse from 'fuse.js';
 import { randomUUID } from 'node:crypto';
-import sumUUIDs from './sumUUIDs';
-import { ErrorDetail, ERRORS } from '../types/errors';
+import sumUUIDs from './sumUUIDs.js';
+import { ErrorDetail, ERRORS } from '../types/errors.js';
 
 // #region // * BASIC TYPES
 export interface User {

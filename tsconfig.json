@@ -30,9 +30,7 @@
     "skipLibCheck": true,
   },
   "include": [
-    // "src/**/*"
-    "src/**/*.ts",
-    "global.d.ts"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules"

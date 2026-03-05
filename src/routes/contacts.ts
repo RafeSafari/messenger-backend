@@ -1,5 +1,4 @@
 import { Router } from 'express';
-// import { addFriends, searchUsers, getFriends, parseUsersListToClient, getUser } from '../library/cometChatApi.js';
 import { addFriends, searchUsers, getFriends, parseUsersListToClient, getUser } from '../library/inMemoryChatApi.js';
 import { sendToUser } from '../socket.js';
 import sumUUIDs from '../library/sumUUIDs.js';

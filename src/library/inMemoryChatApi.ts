@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { ChatClient, User, GetFriendsRequest } from "./inMemoryChat";
+import { ChatClient, User, GetFriendsRequest } from "./inMemoryChat.js";
 import bcrypt from 'bcrypt';
-import { ERRORS, getErrorDetails } from "../types/errors";
+import { getErrorDetails } from "../types/errors.js";
 const instance = new ChatClient();
 
 export const parseUsersListToClient = async (users: User[]) => await instance.parseUsersList(users);
@@ -37,7 +37,7 @@ export const register = (body: {name: string, email: string, password: string}):
       return { success: false, error: 'An account with this email already exists', code: 'EMAIL_EXISTS' };
     }
     
-    // Check for validation errors from CometChat API
+    // Check for validation errors
     if (err.response?.data?.error) {
       return { success: false, error: err.response.data.error, code: 'INVALID_DATA' };
     }

@@ -1,6 +1,6 @@
 # Messenger Backend
 
-A real-time messaging backend built with Express, Socket.io, and CometChat integration.
+A real-time messaging backend built with Express, Socket.io with no DB.
 
 ## Prerequisites
 
@@ -23,9 +23,6 @@ A real-time messaging backend built with Express, Socket.io, and CometChat integ
 3. **Create a `.env` file** in the root directory with the following variables:
    ```env
    JWT_SECRET=your_jwt_secret_key_here
-   COMETCHAT_APP_ID=your_cometchat_app_id
-   COMETCHAT_REGION=your_cometchat_region
-   COMETCHAT_API_KEY=your_cometchat_api_key
    PORT=50005
    ```
 
@@ -72,7 +69,6 @@ The server will start on `http://localhost:50005` (or the port specified in your
 
 - Express.js - Web framework
 - Socket.io - Real-time communication
-- CometChat - Chat service integration
 - TypeScript - Type-safe JavaScript
 - JWT - Authentication
 - bcrypt - Password hashing

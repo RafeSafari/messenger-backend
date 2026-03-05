@@ -1,5 +1,4 @@
 import { Router } from 'express';
-// import { getConversation, sendMessage } from '../library/cometChatApi.js';
 import { getConversation, sendMessage } from '../library/inMemoryChatApi.js';
 import { sendToUser } from '../socket.js';
 
